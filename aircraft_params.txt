@@ -1,0 +1,88 @@
+{dict}: 0
+
+--- Aircraft Variables ---
+
+empty mass (kg){emptyMass}: 13
+wing surface area(m2){S}: 1.48
+parasite drag{parasiteDrag}: 0.036
+Aspect ratio{AR}: 14.6
+oswald efficiency factor{e}: 0.85
+maximum pitch (degrees){maxPitch}: 8
+maximum turn rate (degrees/s){maxTurnRate}: 5
+dcl/dalpha (1/degrees){clSlope}: 0.1
+clIntercept{clIntercept}: 0.25
+rolling friction coefficient{rollingFriction}: 0.008
+payload mass (kg){payloadMass}: 3
+
+--- Environment variables ---
+
+g (m/s2){g}: 9.81
+molar mass of air (kg/mol){MMair}: 0.02897
+universal gas constant (J/molkg){R}: 8.31
+pressure at sea level (Pa){P0}: 101325
+air density at sea level (kg/m3){rho0}: 1.29
+temperature at sea level (Kelvin){T0}: 273
+temperature lapse rate (Kelvin/m){tLapse}: 0.0065
+
+--- powerplant section ---
+{dict}: 1
+
+propeller diamater (m){D}: 0.35
+
+--- ICE parameters ---
+
+tank mass (kg){fullTankMass}: 1.5
+engine mass(kg){ICEMass}: 2.8
+LCV fuel (J/kg){LCV}: 43000000
+maxEngineThrust (N){maxICEThrust}: 58.8
+max engine power at sea level (W){maxICEPower}: 1864
+
+--- EM parameters --- 
+
+battery no. which should be used (0<=1<5){battChoice}: 4
+battery voltages (V){battVList}: 1x5
+14.8, 11.1, 14.8, 14.8, 14.8
+battery capacities available (mAh){battCapList}: 1x5
+1300, 2200, 5000, 12000, 20000
+battery mass (kg){battMassList}: 1x5
+0.170, 0.210, 0.586, 1.08, 1.78
+motor mass (kg){EMMass}: 0.33
+maximum motor power (W){maxEMPower}: 3000
+maximum motor torque (Nm){maxEMTorque}: 2.22
+maximum motor speed (rev/s){maxEMrps}: 140
+motor efficiency {EMEff}: 0.75
+
+--- ICE Performance Maps ---
+
+numer of rows {ICEMapRows}: 7
+number of columns {ICEMapCols}: 9
+
+column index (rev/s) {ICEMaprps}: 1x9
+28.33,  42.49,  56.66,  70.83, 85.00, 99.16, 113.33, 127.49, 141.66
+
+row index (Nm) {ICEMapTorque}: 1x7
+0.641, 1.068, 1.495, 1.922, 2.349, 2.776, 3.203
+
+specific fuel consumption {effMap}: 7x9
+0.0429, 0.0436, 0.0465, 0.0455, 0.0493, 0.0526, 0.0587, 0.0558, 0.0516
+0.0489, 0.0502, 0.0569, 0.0587, 0.0641, 0.0606, 0.0676, 0.0613, 0.0569
+0.0498, 0.0541, 0.0641, 0.0711, 0.0729, 0.0786, 0.0858, 0.0744, 0.0584
+0.0493, 0.0531, 0.0613, 0.0715, 0.0769, 0.0930, 0.1063, 0.0797, 0.0581
+0.0472, 0.0507, 0.0600, 0.0711, 0.0744, 0.0893, 0.0914, 0.0724, 0.0575
+0.0426, 0.0459, 0.0521, 0.0563, 0.0641, 0.0715, 0.0786, 0.0680, 0.0558
+0.0398, 0.0436, 0.0465, 0.0507, 0.0547, 0.0569, 0.0569, 0.0575, 0.0521
+
+
+--- Propeller performance data (18x10 2 blades)--- 
+
+advance ratio index for data {JIndex}: 1x19
+1.190, 1.128, 1.078, 1.022, 0.971, 0.909, 0.863, 0.803, 0.754, 0.710, 0.660, 0.619, 0.574, 0.526, 0.475, 0.427, 0.390, 0.336, 0.249
+
+propeller coefficient of thrust {propCtData}: 1x19
+0.0045, 0.0173, 0.0293, 0.0399, 0.0495, 0.0610, 0.0696, 0.0785, 0.0871, 0.0944, 0.1027, 0.1100, 0.1163, 0.1226, 0.1305, 0.1362, 0.1413, 0.1402, 0.1428
+
+propeller efficiency {propEffData}: 1x19
+0.258, 0.604, 0.744, 0.792, 0.805, 0.808, 0.801, 0.782, 0.772, 0.755, 0.734, 0.714, 0.689, 0.661, 0.626, 0.587, 0.554, 0.432, 0.313
+
+propeller coefficient of power {propCpData}: 1x19
+0.0208, 0.0323, 0.0425, 0.0515, 0.0597, 0.0686, 0.0750, 0.0805, 0.0850, 0.0888, 0.0924, 0.0953, 0.0968, 0.0976, 0.0990, 0.0990, 0.0995, 0.1092, 0.1135

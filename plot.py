@@ -7,7 +7,62 @@ from support_funs import Sigmoid, AC, GetCd, PlantSizing
 from get_params import GetParams
 
 # use the style for plots
-plt.style.use('ipstyle')
+try:
+    plt.style.use('ipstyle')
+except:
+    pass
+
+
+def PlotResiduals(op, plotC=True, plotX=True):
+    """
+    Plots the residuals and cost function values from an optimization object
+
+    Parameters
+    ----------
+    op : optimization object
+    plotC : bool, optional
+        Determine whether to plot the cost function. The default is True.
+    plotX : TYPE, optional
+        Determine whether to plot the residuals. The default is True.
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    x = op.result.x
+
+    iterArray = np.linspace(0, op.iterations - 1, op.iterations)
+
+    if plotX:
+        resFig, resAx1 = plt.subplots()
+        resAx1.plot(iterArray, op.xHist[0, :op.iterations] - x[0], label='Climb V1')
+        resAx1.plot(iterArray, op.xHist[1, :op.iterations] - x[1], label='Climb V2')
+        resAx1.plot(iterArray, op.xHist[2, :op.iterations] - x[2], label='Cruise Alt')
+        resAx1.plot(iterArray, op.xHist[3, :op.iterations] - x[3], label='Cruise V1')
+        resAx1.set_xlabel('number of iterations')
+        resAx1.set_ylabel('Residuals')
+        
+        if plotC:
+            resAx2 = resAx1.twinx()
+            resAx2.plot(iterArray, op.cHist[:op.iterations], color='k', label='Solution')
+            lines2, labels2 = resAx2.get_legend_handles_labels()
+            lines, labels = resAx1.get_legend_handles_labels()
+            resAx2.set_ylabel('Solution')
+    
+            resAx2.legend(lines + lines2, labels + labels2, loc=0)
+        else:
+            plt.legend()
+    
+    else:
+        plt.plot(iterArray, op.cHist[:op.iterations], color='k', label='Solution')
+        plt.xlabel('number of iterations')
+        plt.ylabel('equivalent mass cost')
+    
+    plt.title('')
+    plt.show()
+
 
 
 def PlotPlantSizing():
@@ -62,7 +117,7 @@ def PlotSigmoid():
 
 
 
-def PlotICEMaps(PP):
+def PlotICEMap(PP):
     """ Produces a surface plot of the ICE efficiency map from the .txt file """
     X, Y = np.meshgrid(PP['ICEMaprps'], PP['ICEMapTorque'])
     
@@ -72,7 +127,7 @@ def PlotICEMaps(PP):
     effPlot.set_xlabel('Shaft rotational speed (rev/s)')
     effPlot.set_ylabel('Torque (Nm)')
     effPlot.set_zlabel('Efficiency')
-    # effPlot.set_title('ICE Efficiency Map')
+    effPlot.set_title('ICE Efficiency Map')
 
 
 def PlotDragPolar():
@@ -226,13 +281,15 @@ def Plot(s, *args, save=False, timerange='all', title=True, direct='simulationPi
     if any(s in args for s in ['rps', 'speed']):
         x = np.linspace(tTemp[0], tTemp[-1], 10)
         y = np.repeat(s.PP['idealICErps'], len(x))
-        plt.plot(x, y, 'r', label='ideal ICE speed')
-        plt.plot(tTemp, s.ICErps[start:end], D, markevery=m, label='ICE speed')
-        plt.plot(tTemp, s.EMrps[start:end], D, markevery=m, label='EM speed')
+        
+        rpsFig, rpsAx1 = plt.subplots(figsize=(9, 5))
+        rpsAx1.plot(x, y, 'r', label='ideal ICE speed')
+        rpsAx1.plot(tTemp, s.ICErps[start:end], D, markevery=m, label='ICE speed')
+        rpsAx1.plot(tTemp, s.EMrps[start:end], D, markevery=m, label='EM speed')
         if title: plt.title('ICE and EM shaft speed')
-        plt.xlabel(timeLabel)
-        plt.ylabel('Shaft Speed (rev/s)')
-        plt.legend()
+        rpsAx1.set_xlabel(timeLabel)
+        rpsAx1.set_ylabel('Shaft Speed (rev/s)')
+        rpsAx1.legend()
         plt.savefig(direct + 'rps.png')
         plt.show()
 
@@ -334,7 +391,7 @@ def Plot(s, *args, save=False, timerange='all', title=True, direct='simulationPi
     # thrust signal, pitch signal, angle of attach, flight path angle or any combination of them
     if any(x in args for x in ('pitch', 'Pitch', 'alpha', 'Alpha', 'gamma', 'Gamma', 'T',
                                't', 'thrust', 'Thrust')):
-        angleFig, angleAx1 = plt.subplots()
+        angleFig, angleAx1 = plt.subplots(figsize=(9, 5))
         t = ''
         if any(s in args for s in ['pitch', 'Pitch']):
             angleAx1.plot(tTemp, s.pitch[start:end], D, markevery=m, label='Pitch')
@@ -486,7 +543,7 @@ def Plot(s, *args, save=False, timerange='all', title=True, direct='simulationPi
         plt.show()
         
     if any(s in args for s in ['v1andv2', 'v1v2']):
-        v1v2Fig, v1v2Ax1 = plt.subplots()
+        v1v2Fig, v1v2Ax1 = plt.subplots(figsize=(9, 5))
         v1v2Ax2 = v1v2Ax1.twinx()
         v1v2Ax1.plot(tTemp, s.v1[start:end], label='v1')
         v1v2Ax2.plot(tTemp, s.v2[start:end], color='tab:orange', label='CR')

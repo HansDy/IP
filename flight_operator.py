@@ -194,7 +194,7 @@ def TakeOff(s, minimizeTOD = False, fullOutput=True):
 
     
     if fullOutput:
-        print('Lift off achieved in ', s.time, 's, ',
+        print('Lift off achieved in ', round(s.time, 2), 's, ',
               '\n    x1=', round(s.x1[s.n], 2), 'm | v1 =', round(s.v1[s.n], 2), 'm/s',
               '\n    x2=', round(s.x2[s.n], 2), 'm | v2 =', round(s.v2[s.n], 2), 'm/s',
               '\n    thrust =', round(s.thrust[s.n - 1], 2), 'N | pitch =',
@@ -269,7 +269,7 @@ def Climb(s, v1=30, desiredCR=1, desiredHeight=1000, fullOutput=True):
     if fullOutput:
         print('\n----------')
         print('-- CLIMB --')
-        print('Starting climb at t=', s.time,
+        print('Starting climb at t=', round(s.time, 2), 's, ',
               '\n    x1=', round(s.x1[s.n], 2), 'm | v1 =', round(s.v1[s.n], 2), 'm/s',
               '\n    x2=', round(s.x2[s.n], 2), 'm | v2 =', round(s.v2[s.n], 2), 'm/s',
               '\n    desiredCR =', desiredCR, 'm/s'
@@ -374,7 +374,7 @@ def Climb(s, v1=30, desiredCR=1, desiredHeight=1000, fullOutput=True):
               'm/s, v2=', round(desiredCR, 3), 'm/s)\n')
 
     if fullOutput:
-        print('Finished climb at t=', s.time,
+        print('Finished climb at t=', round(s.time, 2),
               '\n    x1=', round(s.x1[s.n], 2), 'm | v1 =', round(s.v1[s.n], 2), 'm/s'
               '\n    x2=', round(s.x2[s.n], 2), 'm | v2 =', round(s.v2[s.n], 2), 'm/s'
               '\n    Distance climbed:', round(climbDistance / 1000, 2), 'km',
@@ -418,7 +418,7 @@ def Cruise(s, v1=30, distance=800, initialHeight='auto', fullOutput=True):
     if fullOutput:
         print('\n----------')
         print('-- CRUISE --')
-        print('Starting cruise at t=', s.time,
+        print('Starting cruise at t=', round(s.time, 2), 's, ',
               '\n    x1=', round(s.x1[s.n], 2), 'm | v1 =', round(s.v1[s.n], 2), 'm/s',
               '\n    x2=', round(s.x2[s.n], 2), 'm | v2 =', round(s.v2[s.n], 2), 'm/s',
               '\n    desired distance =', round(distance / 1000, 2), ' km | desired v =',
@@ -517,7 +517,7 @@ def Cruise(s, v1=30, distance=800, initialHeight='auto', fullOutput=True):
     
     
     if fullOutput:
-        print('Finished cruise at t=', s.time,
+        print('Finished cruise at t=', round(s.time, 2),
               '\n    x1=', round(s.x1[s.n], 2), 'm | v1 =', round(s.v1[s.n], 2), 'm/s'
               '\n    x2=', round(s.x2[s.n], 2), 'm | v2 =', round(s.v2[s.n], 2), 'm/s'
               '\n    Distance cruised:', round(cruiseDistance / 1000, 2), 'km',
@@ -545,7 +545,7 @@ def Glide(s, desiredHeight, fullOutput=True):
     if fullOutput:
         print('\n----------')
         print('-- GLIDE --')
-        print('Starting glide at t=', s.time,
+        print('Starting glide at t=',round(s.time, 2), 's, ',
               '\n    x1=', round(s.x1[s.n], 2), 'm | v1 =', round(s.v1[s.n], 2), 'm/s',
               '\n    x2=', round(s.x2[s.n], 2), 'm | v2 =', round(s.v2[s.n], 2), 'm/s',
               '\n    Glide angle =', round(gamma, 2), 'degrees | pitch for glide =',
@@ -604,7 +604,7 @@ def Glide(s, desiredHeight, fullOutput=True):
               ALTITUDE IS', s.x2[s.n], 'm \n')
     
     if fullOutput:
-        print('Finished glide at t=', s.time,
+        print('Finished glide at t=', round(s.time, 2), 's, ',
               '\n    x1=', round(s.x1[s.n], 2), 'm | v1 =', round(s.v1[s.n], 2), 'm/s'
               '\n    x2=', round(s.x2[s.n], 2), 'm | v2 =', round(s.v2[s.n], 2), 'm/s'
               '\n    Distance glided:', round(glideDistance / 1000, 2), 'km',

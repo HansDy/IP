@@ -3,7 +3,7 @@ from scipy import interpolate
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, interp2d
 import numbers
 from ADRpy import atmospheres as at
 
@@ -53,7 +53,7 @@ def ArrayMax2d(array):
     if len(np.shape(array)) != 2:
         raise ValueError('ArrayMax2d was passed an array that is not',
                          '2-dimensional')
-    
+
     maxVal = 0
     for index, i in enumerate(array[0, :]):
         for jndex, j in enumerate(array[:, index]):
@@ -61,7 +61,7 @@ def ArrayMax2d(array):
                 maxVal = j
                 row = index
                 col = jndex
-    
+
     return maxVal, row, col
 
 
@@ -215,6 +215,9 @@ def GetParams(fileName='aircraft_params.txt'):
     
     PropCp = interp1d(plant_dict['JIndex'], plant_dict['propCpData'],
                       fill_value='extrapolate')
+    
+    ICEEff = interp2d(plant_dict['ICEMaprps'], plant_dict['ICEMapTorque'],
+                      plant_dict['effMap'])
 
     # joules capacity = V[V] * capacity[mAh] * 3.6[A*s/(mA*h)]
     battCapList = plant_dict['battVList'] * plant_dict['battCapList'] * 3.6
@@ -226,7 +229,8 @@ def GetParams(fileName='aircraft_params.txt'):
                        'battCapList': battCapList,
                        'CtFun': PropCt,
                        'CqFun': PropCq,
-                       'CpFun': PropCp
+                       'CpFun': PropCp,
+                       'ICEEffFun': ICEEff
                        })
 
     return aircraft_dict, plant_dict

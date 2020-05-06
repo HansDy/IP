@@ -5,7 +5,7 @@ import numbers
 import math
 import numpy as np
 from scipy.optimize import minimize_scalar, fsolve
-from scipy import interpolate
+from scipy.interpolate import interp2d
 
 from ADRpy import atmospheres as at
 from ADRpy import constraintanalysis as ca
@@ -156,7 +156,7 @@ def ClCd(plot=False, h=1000):
     Returns
     -------
     float
-        Angle of attack where the maximum L/D occurs.
+        Angle of attack where the maximum L/D occurs in degrees.
     flaot
         Maximum L/D value.
 
@@ -191,17 +191,53 @@ def ClCd(plot=False, h=1000):
 
 
 def GlideDistance(deltaH):
-    """ Returns the distance that can be glided given an initial height """
+    """
+    Returns the distance that can be glided given an initial height. Assumes aircraft is
+    pitched so that the maximum L/D occurs, which should be the case if using
+    flight_operator.Glide
+
+    Parameters
+    ----------
+    deltaH : int or float
+        Height to be covered during the gliding descent.
+
+    Returns
+    -------
+    float
+        Approximate distance the glide will cover in meters.
+
+    """
+    
     return deltaH * ClCd()[1]
 
 
-# function to interpolate ICE efficiency map
-def ICEEff(rps=0, Q=0):
-    eff = 0
-    # if either of the rps or Q value are below the minimum map values, extrapolate
-    if rps < PP['ICEMaprps'][0] or Q < PP['ICEMapTorque'][0]:
-        eff = interpolate.interp2d(PP['ICEMaprps'], PP['ICEMapTorque'], PP['effMap'])
-        
+def ICEEff(PP, rps, Q):
+    """Interpolate efficiency map using interpolation function from powerplant dictionary.
+    Essentially adds some padding to the interpolation to prevent the ICE from running at
+    excessive rps or Q
+
+    Parameters
+    ----------
+    PP: dict
+        Power plant dictionary
+    rps : int or float
+        ICE shaft speed.
+    Q : int or float
+        ICE shaft torque
+
+    Raises
+    ------
+    ValueError
+        If rps or Q parameters exceed the bounds of the ICE efficiency map. The ICE cannot
+        operate outside these bounds.
+
+    Returns
+    -------
+    float
+        efficiency as a decimal.
+
+    """
+    
     # if the rps value is too high, give error message
     if rps > PP['ICEMaprps'][-1]:
         msg = 'The ICE cannot operate at an rps of '\
@@ -209,18 +245,21 @@ def ICEEff(rps=0, Q=0):
         raise ValueError(msg)
         
     # if the torque value is too high, give error message
-    if Q > PP['ICEMapTorque'][-1]:
+    elif Q > PP['ICEMapTorque'][-1]:
         msg = 'The ICE cannot operate at a torque of '\
             + str(round(Q, 4)) + '.'
         raise ValueError(msg)
+        
+    elif Q == 0 or rps == 0:
+        eff = 0
+
+    # if Q and rps are fine, extrapolate
+    else:
+        eff = PP['ICEEffFun'](rps, Q)
     
-    # if the rps and torque vales are within the ICE map range, extrapolate
-    if rps > PP['ICEMaprps'][0] and Q > PP['ICEMapTorque'][0] and\
-       rps < PP['ICEMaprps'][-1] and Q < PP['ICEMapTorque'][-1]:
-        eff = interpolate.interp2d(PP['ICEMaprps'], PP['ICEMapTorque'],
-                                   PP['effMap'], bounds_error=True)
-              
-    return eff(rps, Q)
+    
+    
+    return float(eff)
 
 
 def Sigmoid(t, floor, ceiling, start, end):
@@ -330,6 +369,10 @@ def PlantSizing(plant, rEM=0.6):
     PP['ICEMapTorque'] *= ICEFactor
     PP['maxEMTorque'] *= EMFactor
     
+    # remake the efficiency interpolation with new values
+    PP['ICEEffFun'] = interp2d(PP['ICEMaprps'], PP['ICEMapTorque'],
+                               PP['effMap'])
+
     PP['maxEMPower'] = 2 * math.pi * PP['maxEMrps'] * PP['maxEMTorque']
     
     # resize the mass

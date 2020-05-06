@@ -9,10 +9,8 @@ from flight_operator import AnalyticalFindTP, TakeOff, Cruise, Climb, Glide, Hov
 from simulator import simulate
 from support_funs import GlideDistance, ClCd, PropTFun, GetCd, PlantSizing, AC
 from get_params import Density, GetParams
-from plot import Plot
+from plot import Plot, PlotResiduals
 
-# use the style for plots
-plt.style.use('ipstyle')
 
 def CostvsHeight(x=[20, 1.5, 1, 25], rng=50, plot=False):
     costArray = np.zeros(5)
@@ -20,7 +18,7 @@ def CostvsHeight(x=[20, 1.5, 1, 25], rng=50, plot=False):
 
     for index, i in enumerate(hArray):
         x[2] = i
-        costArray[index] = MCostF(x, rng)
+        costArray[index] = CostF(x, rng)
     
     if plot:
         s = 'Climb: v1 = ' + str(climbv1) + ', v2 = ' + str(climbv2) + 'm/s'\
@@ -56,7 +54,7 @@ class Optimize(object):
         self.x0 = np.array([10, 2.9, 5, 25])
 
         
-    def MCostF(self, x, fullOutput=False, saveSim=False):
+    def CostF(self, x, fullOutput=False, saveSim=False):
         if len(x) != 4:
             raise ValueError('the cost function must be passed a 4 dimensional array')
 
@@ -127,9 +125,9 @@ class Optimize(object):
         # nhcon = NonlinearConstraint(HConstraint, 0, np.inf)
         # vcon = NonlinearConstraint(VConstraint, 0, np.inf)
     
-        self.result = minimize(self.MCostF, x0, method='trust-constr',
+        self.result = minimize(self.CostF, x0, method='trust-constr',
                                options=op, bounds=(B))
-        # a = basinhopping(MCostF, x0, minimizer_kwargs={'args': desiredRange})
+        # a = basinhopping(CostF, x0, minimizer_kwargs={'args': desiredRange})
         
         print(self.result.nfev)
         return self.result
@@ -158,7 +156,7 @@ def Results(rng=50):
     op1.optm()
     
     # save the simulator object that contains the last iteration of the optimisation
-    op1.MCostF(op1.result.x, saveSim=True)
+    op1.CostF(op1.result.x, saveSim=True)
 
     # amount of fuel actually needed for flight
     usedFuelM1 = op1.sim.fuelMassCost[op1.sim.n - 1]
@@ -192,7 +190,7 @@ def Results(rng=50):
     op2.optm()
 
     # save new, lighter profile
-    op2.MCostF(op2.result.x, saveSim=True)
+    op2.CostF(op2.result.x, saveSim=True)
 
     # amount of fuel actually needed for flight
     usedFuelM2 = op2.sim.fuelMassCost[op2.sim.n - 1]
@@ -232,7 +230,7 @@ def Results(rng=50):
         op3.optm()
         
         # save new profile
-        op3.MCostF(op3.result.x, saveSim=True)
+        op3.CostF(op3.result.x, saveSim=True)
         
         battMassSavings = s0.battMass - op3.sim.battMass
         fuelMassSavings = s0.PP['fullTankMass'] - op3.sim.PP['fullTankMass']
@@ -253,40 +251,6 @@ def Results(rng=50):
     
     else:
         return op1, op2
-
-
-def PlotResiduals(op, plotC=True, plotX=True):
-    x = op.result.x
-
-    iterArray = np.linspace(0, op.iterations - 1, op.iterations)
-
-    if plotX:
-        resFig, resAx1 = plt.subplots()
-        resAx1.plot(iterArray, op.xHist[0, :op.iterations] - x[0], label='Climb V1')
-        resAx1.plot(iterArray, op.xHist[1, :op.iterations] - x[1], label='Climb V2')
-        resAx1.plot(iterArray, op.xHist[2, :op.iterations] - x[2], label='Cruise Alt')
-        resAx1.plot(iterArray, op.xHist[3, :op.iterations] - x[3], label='Cruise V1')
-        resAx1.set_xlabel('number of iterations')
-        resAx1.set_ylabel('Residuals')
-        
-        if plotC:
-            resAx2 = resAx1.twinx()
-            resAx2.plot(iterArray, op.cHist[:op.iterations], color='k', label='Solution')
-            lines2, labels2 = resAx2.get_legend_handles_labels()
-            lines, labels = resAx1.get_legend_handles_labels()
-            resAx2.set_ylabel('Solution')
-    
-            resAx2.legend(lines + lines2, labels + labels2, loc=0)
-        else:
-            plt.legend()
-    
-    else:
-        plt.plot(iterArray, op.cHist[:op.iterations], color='k', label='Solution')
-        plt.xlabel('number of iterations')
-        plt.ylabel('equivalent mass cost')
-    
-    plt.title('')
-    plt.show()
 
 
 def Fly():

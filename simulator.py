@@ -202,31 +202,32 @@ class simulate(object):
             
             2 - ensures the data arrays are long enough to store the incoming data
             
-            3 - store all the data in the arrays mentioned in 2.
-            3.1 - extract all the velocity and position data from the solution array
-                    obtained from numerical ode solver
-            3.2 - store the control inputs as they were in time (pitch and thrust),
-                    as well as the other relevant angles (gamma, alpha)
-            3.3 - calculate and store (using simulator methods) values for the power
-                    consumed by the ICE, EM and in total
-            3.4 - keep track of the size of the time-steps taken by storing the time
-                    associated with each index of the data arrays
-            3.5 - calculate and store the horizontal and vertical acceleration
-                    values (resultant acceleration) by differentiating velocity data
-            3.6 - calculate and store the energy needed by the EM and the ICE by
-                    integrating the power values from 3.3. Calculate and store the
-                    corresponding fuel mass and SOC
+            3 - Set plot markers where the interval was called
             
-            4 - keep track of the times at which this RunInterval() method was
+            4 - run loop through ode solver steps taken in two to process data
+            4.1 - keep track of the size of the time-steps taken by storing the time
+                    associated with each index of the data arrays
+            4.2 - extract all the velocity and position data from the solution array
+                    obtained from numerical ode solver
+            4.3 - store the control inputs as they were in time (pitch and thrust),
+                    as well as the other relevant angles (gamma, alpha)
+            4.4 - call the RB controller to allocate the thrust demand between the ICE and
+                    EM. This will set the ICE and EM thrust and speed
+            4.5 - calculate and store values for the power consumed by the ICE, EM and in total
+            4.6 - drop the payload if halfway through the flight
+
+            5 - calculate and store the horizontal and vertical acceleration
+                    values (resultant acceleration) by differentiating velocity data
+            
+            5 - keep track of the times at which this RunInterval() method was
                     called to keep track of separate interval calls
 
-            5 - update misc values: the number of data that exists (n), the
-                    length of time that has been simulated (time) and set the initial
-                    data for the ODE solvers to the last data from this run
+            6 - Set initial values for the next interval by taking the last values from the
+                    current solution array. Update the time attribute
 
-            6 - Ensures the default setting for the thrust and pitch schedules is
+            7 - Ensures the default setting for the thrust and pitch schedules is
                   constant. This makes quickly changing the control inputs from
-                  the command line quicker.
+                 the command line quicker.
         """
 
         
@@ -317,11 +318,11 @@ class simulate(object):
             self.massCost = np.append(self.massCost, np.zeros(10**3))
             self.ICEEff = np.append(self.ICEEff, np.zeros(10**3))
             
-        """ 4. fill array for markers where odeint restarted"""
+        """ 3. fill array for markers where odeint restarted"""
         self.plotMarkers = np.append(self.plotMarkers, int(self.n))
 
 
-        """ 3. Loop to fill the data lists x1, x2, v1 etc."""
+        """ 4. Loop to fill the data lists x1, x2, v1 etc."""
         if self.n == 0:
             m = len(self.solution[:, 0])
         else:
@@ -331,28 +332,30 @@ class simulate(object):
                 i += 1
             
             self.n += 1
-
+            
+            """ 4.1 Keep track of time """
             self.timeArray[self.n] = self.timeArray[self.n - 1] + self.runtime / self.steps
 
-            """ 3.1 Set displacement and velocity values"""
+            """ 4.2 Set displacement and velocity values"""
             self.x1[self.n] = self.solution[i, 0]
             self.x2[self.n] = self.solution[i, 1]
             self.v1[self.n] = self.solution[i, 2]
             self.v2[self.n] = self.solution[i, 3]
 
-            """ 3.2 fill thrust, alpha and pitch arrays"""
+            """ 4.3 fill thrust, alpha and pitch arrays"""
             self.thrust[self.n] = self.TSchedule(t[i])
             self.alpha[self.n] = self.GetAlpha(t[i], self.v1[self.n], self.v2[self.n])
             self.pitch[self.n] = self.PitchSchedule(t[i])
             self.gamma[self.n] = self.GetGamma(self.v1[self.n], self.v2[self.n])
 
-            """ 3.3 RB controller to allocate the thrust """
+            """ 4.4 RB controller to allocate the thrust """
             self.AllocateThrust()
             
-            """ 3.4 Find power related values """
+            """ 4.5 Find power related values """
             
-            # check if the thrust request exceeds the available thrust
+            # RBOut == 4 is a flag set by the RB to indicate excess thrust was demanded
             if self.RBOut[self.n] == 4:
+                # Set prohibitively high power value to disincentivize optimizer
                 self.EMShaftP[self.n] = 10e5
                 self.ICEShaftP[self.n] = 10e5
             
@@ -361,22 +364,24 @@ class simulate(object):
                                                      h=self.x2[self.n])
                 self.ICEShaftP[self.n] = PropPowerFun(v=self.V(), rps=self.ICErps[self.n],
                                                       h=self.x2[self.n])
-                            
+            
+            # propeller output powers
             self.ICEPropP[self.n] = self.ICEThrust[self.n] * self.V()
             self.EMPropP[self.n] = self.EMThrust[self.n] * self.V()
             self.power[self.n] = self.PDemand()
                         
             
-            # if the propeller is not spinning, there cannot be a J value
+            # if the propeller is not spinning, there cannot be a J value (division by zero)
             if self.ICErps[self.n] == 0:
                 self.ICEJ[self.n] = np.nan
                 ICETorque = 0
+
             else:
                 self.ICEJ[self.n] = self.V() / (self.PP['D'] * self.ICErps[self.n])
                 # needed later because ICEEff = f(Torque)
                 ICETorque = PropQFun(self.V(), self.ICErps[self.n], self.x2[self.n])
             
-            # if the propeller is not spinning, there cannot be a J value
+            # if the propeller is not spinning, there cannot be a J value (division by zero)
             if self.EMrps[self.n] == 0:
                 self.EMJ[self.n] == np.nan
             
@@ -387,27 +392,31 @@ class simulate(object):
             if self.RBOut[self.n] == 4:
                 self.ICEEff[self.n] = 0.01
             else:
-                self.ICEEff[self.n] = ICEEff(self.ICErps[self.n], ICETorque)
+                self.ICEEff[self.n] = ICEEff(self.PP, self.ICErps[self.n], ICETorque)
                 
             # find power drawn from battery and fuel tank
             self.battP[self.n] = self.EMShaftP[self.n] / self.PP['EMEff']
-            self.fuelP[self.n] = self.ICEShaftP[self.n] / self.ICEEff[self.n]
+            if self.ICEEff[self.n] == 0:  # the ICE eff. is zero when the prop is not spinning
+                self.fuelP[self.n] = 0
+            else:
+                self.fuelP[self.n] = self.ICEShaftP[self.n] / self.ICEEff[self.n]
 
-            
+            """ 4.6 drop payload halfway through the flight """
             if self.x1[self.n] >= self.rng / 2 and not self.payloadDropped:
                 self.DropPayload()
                 self.payloadDropped = self.x1[self.n]
                 # print('Payload Dropped at distance =', round(self.x1[self.n]/1000, 2), 'km',
                 #      'and time =', self.timeArray[self.n], 's')
 
+
         s = self.n - m
-        """ 3.5 find the accelerations"""
+        """ 5. find the accelerations by differentiation"""
         # direct differentiation from the solution array
         self.a1[s:s + m] = np.gradient(self.solution[:m, 2])
         self.a2[s:s + m] = np.gradient(self.solution[:m, 3])
 
 
-        """ 5. update number of simulation steps taken, the total time that has
+        """ 6. update number of simulation steps taken, the total time that has
             passed and the initial conditions for the ODE solver """
         self.time = self.timeArray[self.n]
         self.oldy0 = self.y0
@@ -418,10 +427,19 @@ class simulate(object):
         
         # print('solution: ', self.solution[-1,:],'\n')
         
+        """ 7. Ensure the pitch and thrust input signal types are reset """
         self.TShape = 'const'
         self.pitchShape = 'const'
 
     def CalculateE(self):
+        """
+        Cumulatively integrate simulator power arrays to find energy values and mass cost
+
+        Returns
+        -------
+        None.
+
+        """
         e = self.n
         self.fuelE = cumtrapz(self.fuelP[0:e], self.timeArray[0:e],
                               initial=self.fuelE[0])
@@ -446,6 +464,16 @@ class simulate(object):
 
 
     def AllocateThrust(self):
+        """
+        RB controller. Determines the ICE and EM speeds and thrust by applying a set
+        of rules around the ICE speed which produces the highest efficiency. If excess thrust
+        is demanded, the RBOut attribute array is flagged with a 4 at the relevant n value
+
+        Returns
+        -------
+        None.
+
+        """
         v = self.V()
         h = self.x2[self.n]
         thrustRequest = self.thrust[self.n]
@@ -488,7 +516,8 @@ class simulate(object):
                                0, self.PP['maxEMrps'] * 2)
             except ValueError:
                 EMrps = self.PP['maxEMrps']
-
+            
+            # flag to dramatically increase thrust demand
             self.RBOut[self.n] = 4
         
         # use max EM thrust and lowest possible ICE thrust
@@ -547,13 +576,6 @@ class simulate(object):
         self.EMThrust[self.n] = EMThrust
         self.ICEThrust[self.n] = ICEThrust
         
-        # print('EMrps =', EMrps)
-        # print('EMThrust =', EMThrust)
-        # print('ICErps =', ICErps)
-        # print('ICEThrust =', ICEThrust)
-        
-        # print('\n Exiting RB \n')
-        
         
     def IdealTRange(self, *args):
         """ Returns the total (EM+ICE)thrust range at which the powerplant
@@ -574,6 +596,14 @@ class simulate(object):
         return lower, upper
     
     def DropPayload(self):
+        """
+        Drops the payload by reducing the aircaft mass by the payload mass.
+
+        Returns
+        -------
+        None.
+
+        """
         self.zfm -= AC['payloadMass']
         self.totalMass -= AC['payloadMass']
         # print('Payload dropped at x1 = ', self.x1[self.n])

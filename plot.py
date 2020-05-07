@@ -112,7 +112,7 @@ def PlotSigmoid():
         
     plt.legend()
     plt.title('Range of sigmoid functions')
-    plt.savefig('simulationPics/sigmoids.png')
+    # plt.savefig('simulationPics/sigmoids.png')
     plt.show()
 
 
@@ -166,7 +166,7 @@ def PlotPropeller(PP):
     # https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/19930081563.pdf
     # 2 blade 25 degrees prop
     
-    fig, ax1 = plt.subplots()
+    fig, ax1 = plt.subplots(figsize=(9, 5))
     ax1.plot(PP['JIndex'], PP['propEffData'] * 100, 'r', label='Efficiency')
     ax1.set_xlabel('Advance Ratio (J)')
     ax1.set_ylabel('Efficiency (%)')
@@ -282,7 +282,8 @@ def Plot(s, *args, save=False, timerange='all', title=True, direct='simulationPi
         x = np.linspace(tTemp[0], tTemp[-1], 10)
         y = np.repeat(s.PP['idealICErps'], len(x))
         
-        rpsFig, rpsAx1 = plt.subplots(figsize=(9, 5))
+        # rpsFig, rpsAx1 = plt.subplots(figsize=(9, 5))
+        rpsFig, rpsAx1 = plt.subplots()
         rpsAx1.plot(x, y, 'r', label='ideal ICE speed')
         rpsAx1.plot(tTemp, s.ICErps[start:end], D, markevery=m, label='ICE speed')
         rpsAx1.plot(tTemp, s.EMrps[start:end], D, markevery=m, label='EM speed')
@@ -290,7 +291,7 @@ def Plot(s, *args, save=False, timerange='all', title=True, direct='simulationPi
         rpsAx1.set_xlabel(timeLabel)
         rpsAx1.set_ylabel('Shaft Speed (rev/s)')
         rpsAx1.legend()
-        plt.savefig(direct + 'rps.png')
+        if save: plt.savefig(direct + 'rps.png')
         plt.show()
 
     if any(s in args for s in ['total efficiency']):
@@ -391,7 +392,8 @@ def Plot(s, *args, save=False, timerange='all', title=True, direct='simulationPi
     # thrust signal, pitch signal, angle of attach, flight path angle or any combination of them
     if any(x in args for x in ('pitch', 'Pitch', 'alpha', 'Alpha', 'gamma', 'Gamma', 'T',
                                't', 'thrust', 'Thrust')):
-        angleFig, angleAx1 = plt.subplots(figsize=(9, 5))
+        # angleFig, angleAx1 = plt.subplots(figsize=(9, 5))
+        angleFig, angleAx1 = plt.subplots()
         t = ''
         if any(s in args for s in ['pitch', 'Pitch']):
             angleAx1.plot(tTemp, s.pitch[start:end], D, markevery=m, label='Pitch')
@@ -543,7 +545,8 @@ def Plot(s, *args, save=False, timerange='all', title=True, direct='simulationPi
         plt.show()
         
     if any(s in args for s in ['v1andv2', 'v1v2']):
-        v1v2Fig, v1v2Ax1 = plt.subplots(figsize=(9, 5))
+        # v1v2Fig, v1v2Ax1 = plt.subplots(figsize=(9, 5))
+        v1v2Fig, v1v2Ax1 = plt.subplots()
         v1v2Ax2 = v1v2Ax1.twinx()
         v1v2Ax1.plot(tTemp, s.v1[start:end], label='v1')
         v1v2Ax2.plot(tTemp, s.v2[start:end], color='tab:orange', label='CR')

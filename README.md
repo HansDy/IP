@@ -1,4 +1,4 @@
-# IP
+# IP: Optimizing the Concept of Operations of a Hybrid Electric Fixed Wing Aircaft
 
 To run the program, download all the .py files as well as the get_parameters.txt file and store them in the same folder. Run pip install ADRpy and ensure that scipy, numpy and matplotlib are installed on the machine. 
 
